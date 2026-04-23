@@ -1,0 +1,60 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Lead {
+  id        String   @id @default(cuid())
+  name      String
+  phone     String
+  email     String?
+  source    String?
+  language  String   @default("ENGLISH")
+  status    String   @default("NEW")
+  createdAt DateTime @default(now())
+  calls     Call[]
+}
+
+model Call {
+  id                String    @id @default(cuid())
+  leadId            String
+  startedAt         DateTime  @default(now())
+  endedAt           DateTime?
+  durationSec       Int?
+  language          String
+  outcome           String?
+  interestLevel     String?
+  interestScore     Float?
+  topicsCovered     String
+  objectionsRaised  String
+  summary           String?
+  nextAction        String?
+  handoffContext    String?
+  lead              Lead      @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  turns             Turn[]
+}
+
+model Turn {
+  id          String   @id @default(cuid())
+  callId      String
+  role        String
+  text        String
+  translation String?
+  intent      String?
+  timestamp   DateTime @default(now())
+  call        Call     @relation(fields: [callId], references: [id], onDelete: Cascade)
+}
+
+model KnowledgeBase {
+  id              String  @id @default(cuid())
+  key             String  @unique
+  category        String
+  enContent       String
+  hiContent       String
+  hinglishContent String
+  variants        String?
+}

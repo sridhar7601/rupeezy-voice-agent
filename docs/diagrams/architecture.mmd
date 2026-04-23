@@ -1,0 +1,41 @@
+---
+title: Theme 7 — RupeeSpeak Voice Agent Architecture
+---
+flowchart TB
+    subgraph Browser["BROWSER (Lead's Device)"]
+      MIC["🎤 Microphone Input<br/>Web Speech Recognition<br/>(Hindi/English/Hinglish + regional)"]
+      SPEAKER["🔊 Speech Synthesis Output<br/>(language-matched voice)"]
+      UI["📱 Live Transcript UI<br/>Topic chips · Engagement meter"]
+    end
+    subgraph Server["NEXT.JS API"]
+      STATE["🔄 Conversation State Engine<br/>(turn history · topics · objections)"]
+      INTENT["🧠 Intent Classifier<br/>(mock: keyword rules)"]
+      KB["📚 Knowledge Base<br/>6 benefits + 5 objections<br/>+ eligibility · closing lines"]
+      RESP["💬 Response Generator<br/>(picks KB line · tracks coverage)"]
+      SCORE["📊 Lead Scorer<br/>→ Hot · Warm · Cold"]
+    end
+    subgraph Output["OUTCOMES"]
+      HOT["🔥 HOT → RM Handoff<br/>(conversation context JSON)"]
+      WARM["⚡ WARM → WhatsApp Link"]
+      COLD["❄️ COLD → Nurture Queue"]
+    end
+    subgraph Dash["RM DASHBOARD"]
+      FUNNEL["📈 Funnel: contacted → qualified<br/>→ handed off"]
+      CALLS["📞 Call History + Transcripts"]
+    end
+    MIC --> INTENT
+    INTENT --> STATE
+    KB --> RESP
+    STATE --> RESP
+    RESP --> SPEAKER & UI
+    STATE --> SCORE
+    SCORE --> HOT & WARM & COLD
+    HOT & WARM & COLD --> Dash
+    classDef browser fill:#dcfce7,stroke:#166534,color:#052e16
+    classDef srv fill:#16a34a,stroke:#166534,color:#fff
+    classDef out fill:#86efac,stroke:#166534,color:#052e16
+    classDef dash fill:#f0fdf4,stroke:#166534,color:#052e16
+    class MIC,SPEAKER,UI browser
+    class STATE,INTENT,KB,RESP,SCORE srv
+    class HOT,WARM,COLD out
+    class FUNNEL,CALLS dash
