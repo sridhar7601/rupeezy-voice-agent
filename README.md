@@ -1,157 +1,73 @@
 # RupeeSpeak — AI Voice Agent for Partner Lead Conversion
 
+Browser-based AI voice agent that pitches in the lead's language, handles objections, and qualifies leads in real time.
+
 > **PanIIT AI for Bharat Hackathon** — Theme 7: Voice-Based AI for Social Impact
 
-A browser-based AI voice agent that receives inbound partner leads, pitches Rupeezy's Authorized Person program in the lead's language (Hindi, English, Hinglish + regional), handles the 5 core objections conversationally, qualifies leads as Hot/Warm/Cold, and hands off to human RMs with full conversation context.
+RupeeSpeak is a browser-based AI voice agent for Rupeezy's partner lead conversion flow. It receives inbound leads, pitches the Authorized Person program in the lead's preferred language, handles the five most common objections conversationally, scores the lead as Hot, Warm, or Cold, and hands qualified leads off to human relationship managers with full conversation context.
 
 ## Quick Start
 
 ```bash
-# Install dependencies
+git clone https://github.com/sridhar7601/rupeezy-voice-agent.git
+cd rupeezy-voice-agent
+cp .env.example .env
 npm install
-
-# Set up database
 npx prisma generate
 npx prisma migrate dev --name init
-
-# Seed demo data
 npm run seed
-
-# Start development server
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) to see the dashboard.
+Open [http://localhost:3000](http://localhost:3000).
 
 ## Demo Data
 
-The seed script (`npm run seed`) populates:
-
-- **14 Knowledge Base entries**: Opening lines, 6 benefits, 5 objections with rebuttals, eligibility criteria, 3 closing scripts (per language: English, Hindi, Hinglish)
-- **10 Leads**: Mix of Hindi (4), English (3), Hinglish (2), Tamil (1)
-- **6 Sample Calls**: 3 HOT, 2 WARM, 1 COLD — with full conversation transcripts showcasing:
-  - Opening pitch
-  - Objection handling (already with broker, not enough contacts, trust concerns)
-  - Lead qualification
-  - Handoff/WhatsApp follow-up
+`npm run seed` populates the knowledge base, seeded multilingual leads, and sample calls that demonstrate objection handling, qualification, and RM handoff or follow-up outcomes.
 
 ## Architecture
 
-![Architecture Diagram](docs/diagrams/architecture.png)
+Lead speech comes in through the browser, the mock conversation engine classifies intent and tracks state turn by turn, then the system selects the right response, scores interest, and hands the lead off with full context.
 
-**Flow:**
-
-1. **Browser** → Lead speaks via Web Speech API (mic input)
-2. **Intent Classifier** → Mock AI detects intent (keyword matching: `already_with_broker`, `not_enough_contacts`, `trust_question`, etc.)
-3. **Conversation State** → Tracks topics covered, objections raised, engagement score (0-1)
-4. **Knowledge Base** → Pulls appropriate response in lead's language
-5. **Response Generator** → Agent speaks via Speech Synthesis
-6. **Lead Scorer** → At call end, computes HOT/WARM/COLD with reasoning
-7. **Outcomes** → HOT → RM handoff with context JSON; WARM → WhatsApp follow-up; COLD → Nurture queue
+![Architecture](docs/diagrams/architecture.png)
 
 ## Tech Stack
 
-- **Framework:** Next.js 15 (App Router), TypeScript
-- **Database:** Prisma + SQLite (dev) / PostgreSQL (prod-ready)
-- **Styling:** Tailwind CSS v3, shadcn/ui, Tremor charts
-- **Voice:** Web Speech API (Recognition + Synthesis)
-- **AI:** Mock conversation engine (keyword-based intent classification) — real LLM integration via `USE_MOCK_AI=false`
-- **Icons:** lucide-react
+- Next.js App Router + TypeScript
+- Prisma + SQLite
+- Tailwind CSS + shadcn/ui + Tremor charts
+- Web Speech API for recognition and synthesis
+- Mock-first conversation engine in `lib/ai.ts`
+- lucide-react icons
 
-## Pages
+## Demo Flow
 
-1. **Dashboard** (`/`) — Funnel metrics (Total → Contacted → Qualified → Handed Off), Hot/Warm/Cold breakdown, Recent calls feed
-2. **Leads** (`/leads`) — Table of all leads with language, status, last call summary, "Call Now" action
-3. **Voice Interface** (`/call/[leadId]`) — THE MONEY SHOT:
-   - Left: Mic button, agent avatar, language selector, engagement meter
-   - Right: Live transcript with intent badges, topics covered chips, objections handled chips
-   - Real-time conversation with Web Speech API
-4. **Call Detail** (`/calls/[id]`) — Post-call summary: interest verdict, reasoning, full transcript, handoff context (for HOT leads)
-5. **Knowledge Base** (`/kb`) — Admin view of all conversation scripts by category (opening, benefit, objection, closing)
+1. Open the dashboard or leads list and click `Call Now` for a seeded lead such as Rajesh Kumar.
+2. Use the voice interface to let the agent open the conversation and capture the lead's response through the microphone.
+3. Raise a common objection like "already with another broker" and show the intent badge, topic coverage, and rebuttal flow.
+4. Continue the conversation until the lead is scored and the call ends.
+5. Open the call detail page to review the transcript, reasoning, interest verdict, and RM handoff context.
 
-## API Routes
+## Key Features
 
-- `POST /api/calls/start` — Creates call, returns opening script
-- `POST /api/calls/[id]/turn` — Adds turn (lead/agent), returns agent response
-- `POST /api/calls/[id]/end` — Scores call, updates lead status
-- `GET /api/calls/[id]` — Full call with turns
-- `GET /api/leads` — List all leads with last call summary
-- `POST /api/leads` — Create lead
-- `POST /api/leads/bulk` — Bulk upload
-- `GET /api/kb` — Knowledge base entries
-- `GET /api/dashboard/funnel` — Dashboard metrics
+- Multilingual voice conversations using browser speech input and output.
+- Objection handling for the core partner-conversion scenarios documented by Rupeezy.
+- Stateful conversation tracking across intents, covered topics, and objections raised.
+- Hot/Warm/Cold lead scoring with reasoning and next-step suggestions.
+- Knowledge-base-driven responses that business teams can update without changing the flow.
 
-## Mock AI Features
+## Documentation
 
-The mock conversation engine (`lib/ai.ts`) implements:
+[docs/solution-document.md](docs/solution-document.md) · [PDF](docs/solution-document.pdf)
 
-- **Intent Classification** (keyword matching):
-  - `positive_acknowledgement`, `ready_to_sign_up`, `ask_for_details`
-  - `already_with_broker`, `not_enough_contacts`, `trust_question`, `time_commitment`, `think_later`, `not_interested`
-- **Response Selection** from Knowledge Base based on:
-  - Current intent
-  - Topics not yet covered
-  - Objections raised
-- **State Tracking**:
-  - Topics covered (zero_joining_fee, brokerage_share, daily_payouts, rise_portal, support_training, eligibility_basic)
-  - Objections raised (with rebuttals)
-  - Lead engagement score (0-1, increases with positive signals, decreases with objections)
-- **Closing Logic**:
-  - HOT: engagement > 0.7 AND 3+ topics AND positive intent → RM handoff
-  - WARM: moderate engagement OR "think later" → WhatsApp follow-up
-  - COLD: low engagement OR explicit refusal → Log cold
-
-## Lead Scoring Algorithm
-
-```typescript
-interestScore = 
-  0.4 * leadEngagement +
-  0.25 * (topicsCovered / 5) +
-  0.15 * (turnCount / 12) +
-  0.2 * (positiveIntents / 3) -
-  0.05 * objectionsCount
-```
-
-**Thresholds:**
-
-- HOT: score ≥ 0.75 AND 3+ topics AND positive intent
-- COLD: score < 0.4 OR explicit disinterest
-- WARM: everything else
-
-**Reasoning includes:**
-
-- Engagement percentage
-- Topics discussed
-- Objections raised and addressed
-- Positive/negative signals from transcript
-
-## Environment Variables
+## Verification
 
 ```bash
-DATABASE_URL="file:./dev.db"
-USE_MOCK_AI="true"
-NEXT_PUBLIC_BASE_URL="http://localhost:3000"  # for SSR fetch
+npm install
+npm run build
+npm run seed
+npm run dev
 ```
-
-## Production Deployment
-
-1. Swap SQLite for PostgreSQL: Update `prisma/schema.prisma` datasource
-2. Enable real LLM: Set `USE_MOCK_AI=false` and implement `lib/ai.ts` real AI path (Gemini API, Claude API, etc.)
-3. Add telephony: Integrate Twilio Voice API for inbound call handling
-4. WhatsApp automation: Use Twilio/WhatsApp Business API for follow-up links
-5. RM dashboard: Add CRM integration for handoff workflow
-
-## Known Limitations (MVP)
-
-- Web Speech API (browser-only) — production needs telephony (Twilio)
-- Mock conversation engine — real LLM for nuanced understanding
-- No call recording — needs server-side audio capture
-- No multi-RM routing — single handoff queue
-- Hindi/English/Hinglish only — Tamil/Telugu/Marathi/Gujarati/Bengali have limited KB
-
-## Solution Document
-
-See [docs/solution-document.md](docs/solution-document.md) for full problem statement, approach, technical details, and future roadmap.
 
 ## License
 
