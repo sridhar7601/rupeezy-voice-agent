@@ -4,6 +4,13 @@ Browser-based AI voice agent that pitches in the lead's language, handles object
 
 > **PanIIT AI for Bharat Hackathon** — Theme 7: Voice-Based AI for Social Impact
 
+
+## 🎥 Demo Video
+
+[![RupeeSpeak — 5-min walkthrough](demo/video/poster.jpg)](demo/video/demo.mp4)
+
+> Voiceover by ElevenLabs (Roger, male). Pipeline reproducible — see `demo/video/`.
+
 RupeeSpeak is a browser-based AI voice agent for Rupeezy's partner lead conversion flow. It receives inbound leads, pitches the Authorized Person program in the lead's preferred language, handles the five most common objections conversationally, scores the lead as Hot, Warm, or Cold, and hands qualified leads off to human relationship managers with full conversation context.
 
 ## Quick Start
