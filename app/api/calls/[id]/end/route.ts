@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { scoreCall } from '@/lib/scoring';
-import type { CallOutcome, InterestLevel } from '@/lib/prisma-types';
+import { generatePostCallSummary } from '@/lib/llm-conversation';
+import type { CallOutcome } from '@/lib/prisma-types';
 import type { ConversationState } from '@/lib/types';
 
 export async function POST(
@@ -49,6 +50,24 @@ export async function POST(
       leadStatus = 'QUALIFIED';
     }
 
+    const aiSummary = await generatePostCallSummary({
+      leadName: call.lead.name,
+      language: call.language as import('@/lib/prisma-types').Language,
+      durationSec,
+      topicsCovered,
+      objectionsRaised,
+      interestLevel: scoring.interestLevel,
+      interestScore: scoring.interestScore,
+      turns: call.turns.map((t) => ({ role: t.role, text: t.text })),
+    });
+
+    const handoffPayload = {
+      ...(scoring.handoffContext ?? {}),
+      ...(aiSummary
+        ? { aiSummary: aiSummary.summary, rmHandoffNote: aiSummary.rmHandoffNote }
+        : {}),
+    };
+
     const updatedCall = await db.call.update({
       where: { id: callId },
       data: {
@@ -57,9 +76,11 @@ export async function POST(
         outcome: (outcome as CallOutcome) || 'COMPLETED',
         interestLevel: scoring.interestLevel,
         interestScore: scoring.interestScore,
-        summary: scoring.reasoning,
+        summary: aiSummary?.summary ?? scoring.reasoning,
         nextAction: scoring.nextAction,
-        handoffContext: scoring.handoffContext ? JSON.stringify(scoring.handoffContext) : null,
+        handoffContext: Object.keys(handoffPayload).length
+          ? JSON.stringify(handoffPayload)
+          : null,
       },
     });
 
@@ -71,6 +92,7 @@ export async function POST(
     return NextResponse.json({
       call: updatedCall,
       scoring,
+      aiSummary,
     });
   } catch (error) {
     console.error('Error ending call:', error);

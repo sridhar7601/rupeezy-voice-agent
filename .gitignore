@@ -36,6 +36,11 @@ next-env.d.ts
 prisma/*.db
 prisma/*.db-journal
 
+# local sqlite + LLM disk cache
+*.db
+*.db-journal
+/data/llm-cache/
+
 # IDEs
 .idea
 .vscode
